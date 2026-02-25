@@ -61,9 +61,10 @@
 
     const configs = {
         juden: {
-            title: "",
+            title: "【受電履歴】",
             fields: [
                 { id: "moushikomi", label: "申込書番号", type: "text" },
+                { id: "staff_name", label: "応対者氏名", type: "text" },
                 { id: "datetime", label: "受電日時", type: "text", value: () => new Date().toLocaleString() },
                 { id: "tel", label: "入電番号", type: "text" },
                 { id: "sender", label: "入電者", type: "text" },
@@ -74,8 +75,10 @@
             ai: true
         },
         kaden: {
-            title: "",
+            title: "【架電履歴】",
             fields: [
+                { id: "moushikomi", label: "申込書番号", type: "text" },
+                { id: "staff_name", label: "応対者氏名", type: "text" },
                 { id: "datetime", label: "架電日時", type: "text", value: () => new Date().toLocaleString() },
                 { id: "tel", label: "架電番号", type: "text" },
                 { id: "content", label: "【架電内容】", type: "textarea", full: true },
@@ -120,7 +123,7 @@
                 { id: "cont_point_val", label: "※有の場合、該当地点番号", type: "text" },
                 { id: "penalty", label: "●違約金", type: "text", suffix: " 円\n※解約事務手数料+特別追加割引がある場合は案内" },
                 { id: "long_waribiki", label: "●長期割OP説明", type: "select", options: ["案内済み", "付帯なし"] },
-                { id: "last_bill", label: "●最終請求の時期・請求ずれ", label2: "案内ずみ", type: "text", value: "案内ずみ" },
+                { id: "last_bill", label: "●最終請求の時期・請求ずれ", type: "text", value: "案内ずみ" },
                 { id: "cvs_pay", label: "●コンビニ払いの可能性", type: "text", value: "案内ずみ" },
                 { id: "death_sec", label: "《契約者（屋号/個人）死亡の場合》※法人は除外", type: "header" },
                 { id: "death_info", label: "死亡証明提出案内済み", type: "text", value: "地域創生本社へ郵送" },
@@ -136,7 +139,7 @@
     function renderForm(tab) {
         currentTab = tab;
         const conf = configs[tab];
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(tab === 'denki' ? '電気' : (tab === 'gas' ? 'ガス' : tab))));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(tab === 'denki' ? '電気' : (tab === 'gas' ? 'ガス' : (tab === 'juden' ? '受電' : (tab === 'kaden' ? '架電' : tab))))));
         document.getElementById('ai-area').style.display = conf.ai ? 'block' : 'none';
         
         const container = document.getElementById('form-content');
@@ -195,7 +198,6 @@
             if(f.label.startsWith('【')) {
                 text += `\n${f.label}\n${val}\n`;
             } else {
-                // ラベルの末尾が「：」で終わっていないものに付与
                 const labelText = f.label.endsWith('：') || f.label.endsWith(':') ? f.label : f.label + '：';
                 text += `${labelText}${prefix}${val}${suffix}\n`;
             }
