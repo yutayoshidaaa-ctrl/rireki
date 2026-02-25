@@ -19,12 +19,8 @@
         .section-title { grid-column: 1 / -1; background: #f0f4f8; padding: 5px 10px; font-weight: bold; border-left: 4px solid var(--primary); margin-top: 10px; font-size: 0.9em; }
         label { font-size: 0.8em; font-weight: bold; margin-bottom: 3px; color: #555; }
         input, textarea, select { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
-        textarea { min-height: 60px; resize: vertical; }
+        textarea { min-height: 80px; resize: vertical; }
         
-        .ai-section { margin: 15px 0; grid-column: 1 / -1; }
-        .ai-btn { background: var(--ai-color); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; font-size: 15px; }
-        .loading-text { display: none; font-size: 0.9em; color: var(--ai-color); margin-top: 5px; text-align: center; font-weight: bold; }
-
         .output-container { margin-top: 30px; background: #2d3436; padding: 20px; border-radius: 8px; color: #dfe6e9; }
         #output { white-space: pre-wrap; font-family: monospace; font-size: 13px; line-height: 1.4; background: #1e272e; padding: 15px; border-radius: 5px; border: 1px solid #3d4e5f; min-height: 100px; }
         .copy-btn { margin-top: 15px; padding: 15px; background: var(--success); color: #fff; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; }
@@ -40,15 +36,9 @@
         <button class="tab-btn" onclick="renderForm('cancel')">キャンセル</button>
         <button class="tab-btn" onclick="renderForm('denki')">電気廃止</button>
         <button class="tab-btn" onclick="renderForm('gas')">ガス廃止</button>
-        <button class="tab-btn" onclick="renderForm('letter')">サンキューレター</button>
     </div>
 
     <div id="form-content" class="grid-form"></div>
-
-    <div id="ai-area" class="ai-section" style="display: none;">
-        <button class="ai-btn" id="run-ai" onclick="runGeminiAI()">✨ AIで内容を要約・自動修正する</button>
-        <div id="loading" class="loading-text">Geminiが分析中...</div>
-    </div>
 
     <div class="output-container">
         <div id="output"></div>
@@ -59,30 +49,38 @@
 <script>
     const configs = {
         juden: {
-            title: "【受電履歴】",
+            title: "",
             fields: [
-                { id: "moushikomi", label: "申込書番号", type: "text" },
-                { id: "staff_name", label: "応対者氏名", type: "text" },
-                { id: "datetime", label: "受電日時", type: "text", value: () => new Date().toLocaleString() },
-                { id: "tel", label: "入電番号", type: "text" },
-                { id: "sender", label: "入電者", type: "text" },
-                { id: "window", label: "窓口名", type: "text", prefix: "【", suffix: "】" },
+                { id: "moushikomi", label: "〇申込書番号", type: "text" },
+                { id: "staff_name", label: "〇応対者氏名", type: "text" },
+                { id: "datetime", label: "○受電日時", type: "text", value: () => new Date().toLocaleString() },
+                { id: "tel", label: "○入電番号", type: "text" },
+                { id: "sender", label: "○入電者", type: "text" },
+                { id: "type", label: "○受架電", type: "text", value: "受電" },
+                { id: "window", label: "〇窓口名", type: "text", prefix: "【", suffix: "】" },
                 { id: "content", label: "【問合せ内容】", type: "textarea", full: true },
-                { id: "ans", label: "【回答】", type: "textarea", full: true }
-            ],
-            ai: true
+                { id: "ans", label: "【回答】", type: "textarea", full: true },
+                { id: "iraisection", label: "【依頼・処理事項】", type: "header_only" },
+                { id: "req_manage", label: "依頼管理作成", type: "select", options: ["不要", "要"], prefix: "依頼管理作成：" },
+                { id: "req_status", label: "対応依頼", type: "select", options: ["不要", "要", "至急要"], prefix: "対応依頼：" },
+                { id: "flag", label: "※対応状況フラグ", type: "select", options: ["対応中", "折返し無"], prefix: "\n※対応状況フラグ：" }
+            ]
         },
         kaden: {
-            title: "【架電履歴】",
+            title: "",
             fields: [
-                { id: "moushikomi", label: "申込書番号", type: "text" },
-                { id: "staff_name", label: "応対者氏名", type: "text" },
-                { id: "datetime", label: "架電日時", type: "text", value: () => new Date().toLocaleString() },
-                { id: "tel", label: "架電番号", type: "text" },
+                { id: "datetime", label: "○架電日時", type: "text", value: () => new Date().toLocaleString() },
+                { id: "staff_name", label: "〇応対者氏名", type: "text" },
+                { id: "tel", label: "○架電番号", type: "text" },
+                { id: "staff_rep", label: "○対応者", type: "text" },
+                { id: "type", label: "○受架電", type: "text", value: "架電" },
                 { id: "content", label: "【架電内容】", type: "textarea", full: true },
-                { id: "result", label: "【架電結果】", type: "textarea", full: true }
-            ],
-            ai: true
+                { id: "result", label: "【架電結果】", type: "textarea", full: true },
+                { id: "iraisection", label: "【依頼・処理事項】", type: "header_only" },
+                { id: "req_manage", label: "依頼管理作成", type: "select", options: ["不要", "要"], prefix: "依頼管理作成：" },
+                { id: "req_status", label: "対応依頼", type: "select", options: ["不要", "要", "至急要"], prefix: "対応依頼：" },
+                { id: "flag", label: "※対応状況フラグ", type: "select", options: ["対応中", "折返し無", "折返し完了"], prefix: "\n※対応状況フラグ：" }
+            ]
         },
         cancel: {
             title: "【キャンセル】",
@@ -91,17 +89,9 @@
                 { id: "title_label", label: " 【キャンセル】", type: "header_small" },
                 { id: "tel", label: " ●入電番号", type: "text", suffix: "（今回電話頂いた番号）" },
                 { id: "confirm", label: " ●本人確認(申込書番号,氏名,生年月日,住所 )", type: "text" },
-                { id: "rep", label: " ●代表者", type: "text" },
                 { id: "reason", label: " ●キャンセル理由", type: "text" },
-                { id: "range", label: " ●一部拠点キャンセル/全拠点キャンセル", type: "select", options: ["全拠点キャンセル", "一部拠点キャンセル"] },
-                { id: "point", label: " ●キャンセルする地点", type: "text", suffix: "（キャンセル対象の供給地点番号）" },
-                { id: "other_no", label: " ●他申込番号", type: "select", options: ["無", "有"] },
-                { id: "other_no_val", label: " ※有の場合、該当申込番号", type: "text", prefix: "→有の場合は対象申込番号記載：" },
-                { id: "is_before", label: " ●切替前か？", type: "text" },
-                { id: "is_mis", label: " ●入違いでの書面発送", type: "text" },
-                { id: "notice", label: " ●通知", type: "select", options: ["FAX", "SMS", "郵送"] },
-                { id: "notice_dest", label: " ●通知先の電話番号/住所", type: "text", suffix: "（FAX/SMSであれば対象 of 番号、郵送であれば対象の住所）" },
-                { id: "leadtime", label: " ●通知までのリードタイム", type: "text" }
+                { id: "range", label: " ●一部拠点/全拠点", type: "select", options: ["全拠点キャンセル", "一部拠点キャンセル"] },
+                { id: "point", label: " ●キャンセル地点", type: "text" }
             ]
         },
         denki: {
@@ -109,18 +99,9 @@
             fields: [
                 { id: "moushikomi", label: "●申込書番号", type: "text" },
                 { id: "addr", label: "●解約住所", type: "text" },
-                { id: "range", label: "●一部拠点廃止/全拠点廃止", type: "select", options: ["全拠点廃止", "一部拠点廃止"] },
                 { id: "point", label: "●廃止する地点", type: "text" },
-                { id: "hope_date", label: "●解約希望日", type: "text" },
                 { id: "end_date", label: "●廃止日", type: "text", suffix: "\n(20●●/●/●まで利用する＝依頼管理と同一)" },
-                { id: "reason", label: "●廃止理由", type: "text" },
-                { id: "kaitai_select", label: "●解体あり/なし・立会あり/なし", type: "select", options: ["解体なし・立会なし", "解体あり・立会あり", "解体あり・立会なし", "解体なし・立会あり"], suffix: "\n（解体有の場合、原則、廃止翌日以降期日設定）" },
-                { id: "kaitai_date", label: "（解体ありの場合）●メーター撤去日時", type: "text", placeholder: "〇〇〇〇/〇/〇 〇時" },
-                { id: "kaitai_contact", label: "（解体あり、かつ、立会ありの場合）●立会担当/解体業者", type: "text", prefix: "連絡先：" },
-                { id: "witness_date", label: "（解体あり、かつ、立会ありの場合）●立会予定日", type: "text", placeholder: "〇〇〇〇/〇/〇 〇時", suffix: "\n→解体有の場合は、解体日まで記載必須" },
-                { id: "send_change", label: "●請求書送付先変更要否", type: "select", options: ["不要：DB上の送付先へ届く", "不要：同住所で事業継続", "必要：建物を解体する", "必要：宛名を付記"] },
-                { id: "penalty", label: "●違約金", type: "text", suffix: " 円\n※解約事務手数料+特別追加割引がある場合は案内" },
-                { id: "last_bill", label: "●最終請求の時期・請求ずれ", type: "text", value: "案内ずみ" }
+                { id: "reason", label: "●廃止理由", type: "text" }
             ]
         },
         gas: {
@@ -128,33 +109,10 @@
             fields: [
                 { id: "close_date", label: " ●閉栓日", type: "text" },
                 { id: "reason", label: " ●閉栓理由", type: "text" },
-                { id: "addr", label: " ●解約住所", type: "text" },
-                { id: "point", label: " ●拠点番号", type: "text", suffix: "(解約する拠点番号)" },
-                { id: "timeslot", label: " ●時間帯指定", type: "select", options: ["9時-12時", "13時-15時", "15時-17時"], suffix: "(9時-12時/13時-15時/15時-17時)" },
-                { id: "meter", label: " ●メーターの位置・オートロック有無", type: "text" },
-                { id: "witness", label: " ●閉栓立会い有無", type: "text", value: "あり", suffix: "(原則あり)" },
-                { id: "witness_type", label: " ●閉栓立会い者区分", type: "select", options: ["代表", "配偶者", "管理人", "家族", "その他"], suffix: "（代表・配偶者・管理人・家族・その他）" },
-                { id: "witness_name", label: " ●閉栓立会い者名", type: "text" },
-                { id: "pre_call", label: " ●当日事前連絡有無", type: "text" },
-                { id: "pre_tel", label: " ●事前連絡先", type: "text", suffix: " ※事前連絡不要でも必須" },
-                { id: "change_header", label: " 下記変更が必要であれば", type: "header_small" },
-                { id: "after_send", label: " ●解約後請求書送付先", type: "text" },
-                { id: "atena", label: " ●宛名", type: "text" },
-                { id: "after_tel", label: " ●解約後の連絡先", type: "text" },
-                { id: "other_no", label: " ●他申込番号", type: "select", options: ["無", "有"] },
-                { id: "other_no_val", label: " ※有の場合、該当申込番号", type: "text" },
-                { id: "penalty", label: " ●違約金", type: "text", suffix: " 円\n ※解約事務手数料+特別追加割引がある場合は案内" },
-                { id: "last_bill", label: " ●最終請求の時期・請求ずれ", type: "text" },
-                { id: "cvs_pay", label: " ●コンビニ払いの可能性", type: "text" },
-                { id: "nichigas", label: " ●閉栓はニチガスから直前に入る", type: "text" },
-                { id: "kaitai", label: " ●解体の有無", type: "select", options: ["無", "有"] },
-                { id: "kaitai_info", label: " 【閉栓+建物解体がある場合】", type: "header_small", suffix: "\n 建物を解体する場合、●●ガスで切り離し等の工事が必要になりますので、\n お手数ではございますが、●●様から、地域のガス会社へご連絡いただき、\n 建物の解体工事があることと、地境撤去 (じざかいてっきょ)をしてほしい旨、お伝えいただけますようにお願い致します。" },
-                { id: "death_sec", label: " 《契約者（屋号/個人）死亡の場合》※法人は除外", type: "header" },
-                { id: "death_info", label: " ・死亡証明提出案内済み", type: "text", value: "地域創生本社へ郵送/FAX番号案内" },
-                { id: "death_mou", label: " 申込書番号記載案内済み", type: "text" }
+                { id: "point", label: " ●拠点番号", type: "text" },
+                { id: "witness", label: " ●閉栓立会い", type: "text", value: "あり" }
             ]
-        },
-        letter: { title: "【サンキューレター】", fields: [{ id: "reason", label: "理由", type: "text" }] }
+        }
     };
 
     let currentTab = 'juden';
@@ -163,23 +121,17 @@
         currentTab = tab;
         const conf = configs[tab];
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(tab === 'denki' ? '電気' : (tab === 'gas' ? 'ガス' : (tab === 'juden' ? '受電' : (tab === 'kaden' ? '架電' : (tab === 'cancel' ? 'キャンセル' : tab)))))));
-        document.getElementById('ai-area').style.display = conf.ai ? 'block' : 'none';
         
         const container = document.getElementById('form-content');
         container.innerHTML = '';
         
         conf.fields.forEach(f => {
-            if(f.type === 'header') {
-                const h = document.createElement('div');
-                h.className = 'section-title'; h.innerText = f.label;
-                container.appendChild(h); return;
-            }
-            if(f.type === 'header_small') { return; }
+            if(f.type === 'header_only' || f.type === 'header_small') return;
 
             const div = document.createElement('div');
             div.className = `form-group ${f.full ? 'full-width' : ''}`;
             const label = document.createElement('label');
-            label.innerText = f.label.replace('●', '').replace('・', '').trim();
+            label.innerText = f.label.replace(/[〇○●]/g, '').replace('：', '').trim();
             div.appendChild(label);
             
             let el;
@@ -205,19 +157,36 @@
 
     function updatePreview() {
         const conf = configs[currentTab];
-        let text = `${conf.title}\n`;
+        let text = conf.title ? conf.title + "\n" : "";
+        
         conf.fields.forEach(f => {
-            if(f.type === 'header') { text += `\n${f.label}\n`; return; }
-            if(f.type === 'header_small') { text += ` ${f.label}${f.suffix || ""}\n`; return; }
+            if(f.type === 'header_only') {
+                text += `\n${f.label}\n`;
+                return;
+            }
+            if(f.type === 'header_small') {
+                text += ` ${f.label}\n`;
+                return;
+            }
+
             const el = document.getElementById(f.id);
             if(!el) return;
             const val = el.value || "";
             const prefix = f.prefix || "";
             const suffix = f.suffix || "";
-            
-            const labelText = f.label.endsWith('：') || f.label.endsWith(':') ? f.label : f.label + '：';
-            text += `${labelText}${prefix}${val}${suffix}\n`;
+
+            if (f.label.startsWith('【')) {
+                text += `\n${f.label}\n${val}\n`;
+            } else if (f.type === 'select' && currentTab !== 'cancel' && currentTab !== 'denki') {
+                // 依頼管理などのインラインセレクト
+                text += `${prefix}${val}${suffix}\n`;
+            } else {
+                const separator = f.label.includes('：') || f.label.includes(':') ? "" : "：";
+                text += `${f.label}${separator}${prefix}${val}${suffix}\n`;
+            }
         });
+        
+        text += "\n-----------------------------------------------------";
         document.getElementById('output').innerText = text;
     }
 
