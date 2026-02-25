@@ -47,7 +47,7 @@
 
     <div id="ai-area" class="ai-section" style="display: none;">
         <button class="ai-btn" id="run-ai" onclick="runGeminiAI()">✨ AIで内容を要約・自動修正する</button>
-        <div id="loading" class="loading-text">Geminiが内容を分析して最適な文章を作成中...</div>
+        <div id="loading" class="loading-text">Geminiが分析中...</div>
     </div>
 
     <div class="output-container">
@@ -57,8 +57,6 @@
 </div>
 
 <script>
-    const GEMINI_API_KEY = "AIzaSyDFJJ0kYoVTOk001elvqJDdBAx6YjC2UGg";
-
     const configs = {
         juden: {
             title: "【受電履歴】",
@@ -102,7 +100,7 @@
                 { id: "is_before", label: " ●切替前か？", type: "text" },
                 { id: "is_mis", label: " ●入違いでの書面発送", type: "text" },
                 { id: "notice", label: " ●通知", type: "select", options: ["FAX", "SMS", "郵送"] },
-                { id: "notice_dest", label: " ●通知先の電話番号/住所", type: "text", suffix: "（FAX/SMSであれば対象の番号、郵送であれば対象の住所）" },
+                { id: "notice_dest", label: " ●通知先の電話番号/住所", type: "text", suffix: "（FAX/SMSであれば対象 of 番号、郵送であれば対象の住所）" },
                 { id: "leadtime", label: " ●通知までのリードタイム", type: "text" }
             ]
         },
@@ -120,29 +118,42 @@
                 { id: "kaitai_date", label: "（解体ありの場合）●メーター撤去日時", type: "text", placeholder: "〇〇〇〇/〇/〇 〇時" },
                 { id: "kaitai_contact", label: "（解体あり、かつ、立会ありの場合）●立会担当/解体業者", type: "text", prefix: "連絡先：" },
                 { id: "witness_date", label: "（解体あり、かつ、立会ありの場合）●立会予定日", type: "text", placeholder: "〇〇〇〇/〇/〇 〇時", suffix: "\n→解体有の場合は、解体日まで記載必須" },
-                { id: "send_change", label: "●請求書送付先変更要否", type: "select", options: [
-                    "不要：DB上の送付先へ届く（他地点は継続の為）",
-                    "不要：同住所で、同一商号で、事業を継続する。",
-                    "必要：建物を解体する為、現送付先へは届かない。",
-                    "必要：住所は変更なしだが、宛名を●●方と付記してほしい。"
-                ]},
-                { id: "new_addr", label: "●変更先", type: "text" },
-                { id: "atena", label: "●宛名", type: "text" },
-                { id: "after_tel", label: "●解約後連絡先", type: "text" },
-                { id: "other_no", label: "●他申込番号", type: "select", options: ["無", "有"] },
-                { id: "other_no_val", label: "※有の場合、該当申込番号", type: "text" },
-                { id: "cont_point", label: "●同一申込書番号継続拠点", type: "select", options: ["無", "有"] },
-                { id: "cont_point_val", label: "※有の場合、該当地点番号", type: "text" },
+                { id: "send_change", label: "●請求書送付先変更要否", type: "select", options: ["不要：DB上の送付先へ届く", "不要：同住所で事業継続", "必要：建物を解体する", "必要：宛名を付記"] },
                 { id: "penalty", label: "●違約金", type: "text", suffix: " 円\n※解約事務手数料+特別追加割引がある場合は案内" },
-                { id: "long_waribiki", label: "●長期割OP説明", type: "select", options: ["案内済み", "付帯なし"] },
-                { id: "last_bill", label: "●最終請求の時期・請求ずれ", type: "text", value: "案内ずみ" },
-                { id: "cvs_pay", label: "●コンビニ払いの可能性", type: "text", value: "案内ずみ" },
-                { id: "death_sec", label: "《契約者（屋号/個人）死亡の場合》※法人は除外", type: "header" },
-                { id: "death_info", label: "死亡証明提出案内済み", type: "text", value: "地域創生本社へ郵送" },
-                { id: "death_mou", label: "申込書番号記載案内済み", type: "text", value: "案内済み" }
+                { id: "last_bill", label: "●最終請求の時期・請求ずれ", type: "text", value: "案内ずみ" }
             ]
         },
-        gas: { title: "【ガス廃止】", fields: [{ id: "reason", label: "理由", type: "text" }] },
+        gas: {
+            title: "【ガス廃止】",
+            fields: [
+                { id: "close_date", label: " ●閉栓日", type: "text" },
+                { id: "reason", label: " ●閉栓理由", type: "text" },
+                { id: "addr", label: " ●解約住所", type: "text" },
+                { id: "point", label: " ●拠点番号", type: "text", suffix: "(解約する拠点番号)" },
+                { id: "timeslot", label: " ●時間帯指定", type: "select", options: ["9時-12時", "13時-15時", "15時-17時"], suffix: "(9時-12時/13時-15時/15時-17時)" },
+                { id: "meter", label: " ●メーターの位置・オートロック有無", type: "text" },
+                { id: "witness", label: " ●閉栓立会い有無", type: "text", value: "あり", suffix: "(原則あり)" },
+                { id: "witness_type", label: " ●閉栓立会い者区分", type: "select", options: ["代表", "配偶者", "管理人", "家族", "その他"], suffix: "（代表・配偶者・管理人・家族・その他）" },
+                { id: "witness_name", label: " ●閉栓立会い者名", type: "text" },
+                { id: "pre_call", label: " ●当日事前連絡有無", type: "text" },
+                { id: "pre_tel", label: " ●事前連絡先", type: "text", suffix: " ※事前連絡不要でも必須" },
+                { id: "change_header", label: " 下記変更が必要であれば", type: "header_small" },
+                { id: "after_send", label: " ●解約後請求書送付先", type: "text" },
+                { id: "atena", label: " ●宛名", type: "text" },
+                { id: "after_tel", label: " ●解約後の連絡先", type: "text" },
+                { id: "other_no", label: " ●他申込番号", type: "select", options: ["無", "有"] },
+                { id: "other_no_val", label: " ※有の場合、該当申込番号", type: "text" },
+                { id: "penalty", label: " ●違約金", type: "text", suffix: " 円\n ※解約事務手数料+特別追加割引がある場合は案内" },
+                { id: "last_bill", label: " ●最終請求の時期・請求ずれ", type: "text" },
+                { id: "cvs_pay", label: " ●コンビニ払いの可能性", type: "text" },
+                { id: "nichigas", label: " ●閉栓はニチガスから直前に入る", type: "text" },
+                { id: "kaitai", label: " ●解体の有無", type: "select", options: ["無", "有"] },
+                { id: "kaitai_info", label: " 【閉栓+建物解体がある場合】", type: "header_small", suffix: "\n 建物を解体する場合、●●ガスで切り離し等の工事が必要になりますので、\n お手数ではございますが、●●様から、地域のガス会社へご連絡いただき、\n 建物の解体工事があることと、地境撤去 (じざかいてっきょ)をしてほしい旨、お伝えいただけますようにお願い致します。" },
+                { id: "death_sec", label: " 《契約者（屋号/個人）死亡の場合》※法人は除外", type: "header" },
+                { id: "death_info", label: " ・死亡証明提出案内済み", type: "text", value: "地域創生本社へ郵送/FAX番号案内" },
+                { id: "death_mou", label: " 申込書番号記載案内済み", type: "text" }
+            ]
+        },
         letter: { title: "【サンキューレター】", fields: [{ id: "reason", label: "理由", type: "text" }] }
     };
 
@@ -163,12 +174,12 @@
                 h.className = 'section-title'; h.innerText = f.label;
                 container.appendChild(h); return;
             }
-            if(f.type === 'header_small') { return; } // プレビュー用のみ
+            if(f.type === 'header_small') { return; }
 
             const div = document.createElement('div');
             div.className = `form-group ${f.full ? 'full-width' : ''}`;
             const label = document.createElement('label');
-            label.innerText = f.label.trim();
+            label.innerText = f.label.replace('●', '').replace('・', '').trim();
             div.appendChild(label);
             
             let el;
@@ -197,7 +208,7 @@
         let text = `${conf.title}\n`;
         conf.fields.forEach(f => {
             if(f.type === 'header') { text += `\n${f.label}\n`; return; }
-            if(f.type === 'header_small') { text += ` ${f.label}\n`; return; }
+            if(f.type === 'header_small') { text += ` ${f.label}${f.suffix || ""}\n`; return; }
             const el = document.getElementById(f.id);
             if(!el) return;
             const val = el.value || "";
@@ -208,29 +219,6 @@
             text += `${labelText}${prefix}${val}${suffix}\n`;
         });
         document.getElementById('output').innerText = text;
-    }
-
-    async function runGeminiAI() {
-        const contentEl = document.getElementById('content');
-        const ansEl = (document.getElementById('ans') || document.getElementById('result'));
-        if (!contentEl.value || !ansEl.value) return alert("内容を入力してください");
-        const btn = document.getElementById('run-ai');
-        const loader = document.getElementById('loading');
-        btn.disabled = true; loader.style.display = "block";
-
-        const prompt = `応対メモ要約用。JSON形式 {"content": "...", "ans": "..."} で返せ。挨拶不要。\n内容:${contentEl.value}\n回答:${ansEl.value}`;
-
-        try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } })
-            });
-            const data = await response.json();
-            const result = JSON.parse(data.candidates[0].content.parts[0].text);
-            contentEl.value = result.content; ansEl.value = result.ans;
-            updatePreview();
-        } catch (e) { alert("AI連携エラー"); }
-        finally { btn.disabled = false; loader.style.display = "none"; }
     }
 
     function copyToClipboard() {
